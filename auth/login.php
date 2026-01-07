@@ -2,48 +2,43 @@
 header("Content-Type: application/json");
 require "../config/database.php";
 require "../utils/response.php";
-require "../utils/jwt.php";
 
-$email    = $_POST['email'] ?? '';
-$password = $_POST['password'] ?? '';
+// Ambil JSON dari Android
+$data = json_decode(file_get_contents("php://input"), true);
 
-if ($email == '' || $password == '') {
-    response(false, "Email & password wajib diisi");
+$username = $data['username'] ?? '';
+$password = $data['password'] ?? '';
+
+if ($username == '' || $password == '') {
+    response(false, "Username dan password wajib diisi");
     exit;
 }
 
+// Ambil user berdasarkan username
 $stmt = $conn->prepare(
-    "SELECT user_id, name, password, role FROM users WHERE email = ?"
+    "SELECT user_id, username, password_hash FROM users WHERE username = ?"
 );
-$stmt->bind_param("s", $email);
+$stmt->bind_param("s", $username);
 $stmt->execute();
 $result = $stmt->get_result();
 
-if ($result->num_rows == 0) {
+if ($result->num_rows === 0) {
     response(false, "Login gagal");
     exit;
 }
 
 $user = $result->fetch_assoc();
 
-if (!password_verify($password, $user['password'])) {
+// Verifikasi password
+if (!password_verify($password, $user['password_hash'])) {
     response(false, "Login gagal");
     exit;
 }
 
-/* generate JWT */
-$token = generateJWT([
-    "user_id" => $user['user_id'],
-    "name"    => $user['name'],
-    "role"    => $user['role']
-]);
-
+// Login sukses
 response(true, "Login berhasil", [
-    "token" => $token,
-    "user"  => [
-        "name" => $user['name'],
-        "role" => $user['role']
-    ]
+    "user_id" => $user['user_id'],
+    "username" => $user['username']
 ]);
 
 ?>

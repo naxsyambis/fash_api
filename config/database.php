@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db   = "fash_db";
+$db   = "fash_inventory"; // 
 
 $conn = new mysqli($host, $user, $pass, $db);
 
